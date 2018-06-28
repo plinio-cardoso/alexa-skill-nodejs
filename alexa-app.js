@@ -1,67 +1,69 @@
 var https = require('https');
 
 exports.handler = (event, context) => {
-
     try {
-
-        if (event.session.new) {
-            // New Session
-            console.log("NEW SESSION")
-        }
-
         switch (event.request.type) {
 
-            case "LaunchRequest":
-                // Launch Request
-                console.log(`LAUNCH REQUEST`)
+            case 'LaunchRequest':
                 context.succeed(
                     generateResponse(
                         buildSpeechletResponse("Welcome to an Alexa Skill, this is running on a deployed lambda function", true),
                         {}
                     )
-                )
+                );
                 break;
 
-            case "IntentRequest":
-                // Intent Request
-                console.log(`INTENT REQUEST`)
-
+            case 'IntentRequest':
                 switch(event.request.intent.name) {
-                    case "GetHousesForSale":
-                        var location = event.request.intent.slots.location.value;
-                        var endpoint = "https://tiny-cow-77.localtunnel.me/v1/adverts/" + location;
-                        var body = "";
+                    case 'SearchProperties':
+                        let location = event.request.intent.slots.location.value;
+                        let search_type = event.request.intent.slots.search_type.value;
+                        let property_type = event.request.intent.slots.property_type.value;
+                        let endpoint = 'https://modern-mouse-73.localtunnel.me/v1/adverts/search/' + search_type + '/' + location;
+                        let body = '';
+
+                        if (location == undefined) {
+                            context.succeed(
+                                generateResponse(
+                                    buildSpeechletResponse('Sorry, I don\'t know that location', true),
+                                    {}
+                                )
+                            );
+
+                            break;
+                        }
+
                         https.get(endpoint, (response) => {
-                            response.on('data', (chunk) => { body += chunk })
+                            response.on('data', (chunk) => { body += chunk });
+
                             response.on('end', () => {
-                                var data = JSON.parse(body)
-                                
-                                if (location == undefined) {
+                                var data = JSON.parse(body);
+                                if (data.length == 0) {
+                                    console.log(data);
                                     context.succeed(
                                         generateResponse(
-                                            buildSpeechletResponse('Sorry, I don\'t know that location', true),
+                                            buildSpeechletResponse('I didn\'t find any ' + property_type + ' for ' + search_type + ' in ' + location, true),
                                             {}
                                         )
                                     )
                                 } else {
-                                    if (data.length == 0) {
-                                        context.succeed(
-                                            generateResponse(
-                                                buildSpeechletResponse('I didn\'t find any house for sale in ' + location, true),
-                                                {}
-                                            )
+                                    let message = '';
+                                    let i;
+
+                                    for (i = 0; i < data.length; i++) {
+                                        message += 'In ' + data[i].address + " for " + data[i].price + ' euro, ';
+                                    }
+
+                                    context.succeed(
+                                        generateResponse(
+                                            buildSpeechletResponse('I found ' + data.length + ' ' + property_type + ' in ' + location + ' for ' + search_type + '. ' + message, true),
+                                            {}
                                         )
-                                    } else {
-                                        context.succeed(
-                                            generateResponse(
-                                                buildSpeechletResponse('I found ' + data.length + ' houses in ' + location, true),
-                                                {}
-                                            )
-                                        )
-                                }   
+                                    )
+
                                 }
                             })
-                        })
+                        });
                         break;
 
                     default:
@@ -82,7 +84,24 @@ exports.handler = (event, context) => {
 
     } catch(error) { context.fail(`Exception: ${error}`) }
 
-}
+};
+/*
+function formatResponse(data, location, context) {
+    var message = '';
+
+    var i;
+    for (i = 0; i < data.length; i++) {
+        //console.log(data[i]);
+        message += data[i].address + ", ";
+    }
+
+    context.succeed(
+        generateResponse(
+            buildSpeechletResponse('I found ' + data.length + ' houses in ' + location + ' ' + message, true),
+            {}
+        )
+    )
+}*/
 
 // Helpers
 function buildSpeechletResponse (outputText, shouldEndSession) {
