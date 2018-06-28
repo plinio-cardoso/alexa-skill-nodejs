@@ -1,25 +1,24 @@
-var https = require('https');
+let https = require('https');
+let base_url = 'https://modern-mouse-73.localtunnel.me/';
 
 exports.handler = (event, context) => {
     try {
         switch (event.request.type) {
-
             case 'LaunchRequest':
                 context.succeed(
                     generateResponse(
-                        buildSpeechletResponse("Welcome to an Alexa Skill, this is running on a deployed lambda function", true),
+                        buildSpeechletResponse('Welcome to Daft, Search 1000s of houses, apartments and properties for sale and to rent from all leading estate agents', true),
                         {}
                     )
                 );
                 break;
-
             case 'IntentRequest':
                 switch(event.request.intent.name) {
                     case 'SearchProperties':
                         let location = event.request.intent.slots.location.value;
                         let search_type = event.request.intent.slots.search_type.value;
                         let property_type = event.request.intent.slots.property_type.value;
-                        let endpoint = 'https://modern-mouse-73.localtunnel.me/v1/adverts/search/' + search_type + '/' + location;
+                        let endpoint = base_url + 'v1/adverts/search/' + search_type + '/' + location;
                         let body = '';
 
                         if (location == undefined) {
